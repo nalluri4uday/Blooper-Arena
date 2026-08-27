@@ -1,11 +1,16 @@
-import { createServerlessDb } from '@blooper-arena/database/client';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import * as schema from '@blooper-arena/database/schema';
 
-// Singleton for API routes (serverless, pooled connection)
-let db: ReturnType<typeof createServerlessDb>;
+type Db = ReturnType<typeof drizzle<typeof schema>>;
 
-export function getDb() {
+// Singleton for API routes (serverless connection)
+let db: Db;
+
+export function getDb(): Db {
   if (!db) {
-    db = createServerlessDb(process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL!);
+    const sql = neon(process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL!);
+    db = drizzle(sql, { schema });
   }
   return db;
 }

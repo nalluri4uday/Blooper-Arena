@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getAuth } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { seasons, seasonPlayers, characters, ledgerEntries } from '@blooper-arena/database/schema';
 import { eq, and } from 'drizzle-orm';
@@ -9,7 +9,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getAuth().api.getSession({ headers: await headers() });
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -83,19 +83,17 @@ export async function POST(
   }
 
   const startingCapital = season[0].startingCapital;
-  const playerId = crypto.randomUUID();
 
-  // Create season player and initial ledger entry in a batch
-  await db.insert(seasonPlayers).values({
-    id: playerId,
+  // Create season player and initial ledger entry
+  const [newPlayer] = await db.insert(seasonPlayers).values({
     seasonId,
     characterId,
     cash: startingCapital,
     netWorth: startingCapital,
-  });
+    energyLastReplenishedAt: new Date(),
+  }).returning({ id: seasonPlayers.id });
 
   await db.insert(ledgerEntries).values({
-    id: crypto.randomUUID(),
     seasonId,
     characterId,
     type: 'starting_capital',
@@ -104,5 +102,5 @@ export async function POST(
     description: `Starting capital for season: ${season[0].name}`,
   });
 
-  return NextResponse.json({ playerId, seasonId, characterId }, { status: 201 });
+  return NextResponse.json({ playerId: newPlayer.id, seasonId, characterId }, { status: 201 });
 }

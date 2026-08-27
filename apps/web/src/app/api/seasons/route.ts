@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { seasons, seasonPlayers } from '@blooper-arena/database/schema';
 import { eq, sql, desc } from 'drizzle-orm';
-import { auth } from '@/lib/auth';
+import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 
 export async function GET() {
@@ -27,7 +27,7 @@ export async function GET() {
   // Check if current user has joined each season
   let joinedSeasons = new Set<string>();
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getAuth().api.getSession({ headers: await headers() });
     if (session) {
       const userChars = await db
         .select({ id: sql<string>`c.id` })
