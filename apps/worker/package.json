@@ -1,0 +1,29 @@
+{
+  "name": "@blooper-arena/worker",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "fastify": "^5.0.0",
+    "@fastify/cors": "^10.0.0",
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.0",
+    "drizzle-orm": "^0.44.0",
+    "@blooper-arena/database": "workspace:*",
+    "@blooper-arena/game-engine": "workspace:*",
+    "@blooper-arena/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@blooper-arena/tsconfig": "workspace:*",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.11.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}

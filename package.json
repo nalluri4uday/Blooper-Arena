@@ -1,0 +1,19 @@
+{
+  "name": "blooper-arena",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "db:generate": "pnpm --filter @blooper-arena/database db:generate",
+    "db:migrate": "pnpm --filter @blooper-arena/database db:migrate",
+    "db:push": "pnpm --filter @blooper-arena/database db:push",
+    "db:seed": "pnpm --filter @blooper-arena/database db:seed"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

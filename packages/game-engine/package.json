@@ -1,0 +1,27 @@
+{
+  "name": "@blooper-arena/game-engine",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "seedrandom": "^3.0.5",
+    "js-yaml": "^4.1.0",
+    "zod": "^3.24.0",
+    "@blooper-arena/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@blooper-arena/tsconfig": "workspace:*",
+    "@types/js-yaml": "^4.0.9",
+    "@types/seedrandom": "^3.0.8",
+    "vitest": "^3.0.0",
+    "typescript": "^5.7.0"
+  }
+}

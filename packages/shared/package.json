@@ -1,0 +1,22 @@
+{
+  "name": "@blooper-arena/shared",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./validators": "./src/validators/index.ts",
+    "./constants": "./src/constants/index.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@blooper-arena/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}

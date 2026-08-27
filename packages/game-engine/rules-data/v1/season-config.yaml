@@ -1,0 +1,21 @@
+# Default season configuration for Blooper Arena.
+# All monetary values are in game currency units.
+
+starting_capital: 100000
+target_net_worth: 10000000
+duration_days: 30
+tick_interval_minutes: 30
+energy_replenishment_per_hour: 10
+max_energy: 100
+
+level_thresholds:
+  - { level: 1,  min_net_worth: 0 }
+  - { level: 2,  min_net_worth: 150000 }
+  - { level: 3,  min_net_worth: 250000 }
+  - { level: 4,  min_net_worth: 400000 }
+  - { level: 5,  min_net_worth: 700000 }
+  - { level: 6,  min_net_worth: 1200000 }
+  - { level: 7,  min_net_worth: 2000000 }
+  - { level: 8,  min_net_worth: 3500000 }
+  - { level: 9,  min_net_worth: 6000000 }
+  - { level: 10, min_net_worth: 10000000 }

@@ -1,0 +1,145 @@
+/**
+ * Template data for generating contextual opportunity payloads.
+ * Used by the opportunity generator to create immersive, varied experiences.
+ */
+
+export const COMPANY_NAMES = [
+  'TechNova',
+  'GreenWave',
+  'UrbanPulse',
+  'DataForge',
+  'SkyLattice',
+  'NeonBridge',
+  'Vaultstream',
+  'CrystalByte',
+  'PulseMetrics',
+  'HorizonLabs',
+  'BlueThread',
+  'IronCanopy',
+  'Solaris Corp',
+  'ArcticNet',
+  'MiraCloud',
+  'ThunderScale',
+  'Windfall Systems',
+  'EchoMatrix',
+  'PrimeCircuit',
+  'NovaTide',
+  'LunarGrid',
+  'VectorPeak',
+  'QuantumLeaf',
+  'SwiftHarbor',
+] as const;
+
+export const INVESTMENT_SECTORS = [
+  'Technology',
+  'Real Estate',
+  'Renewable Energy',
+  'Healthcare',
+  'Financial Services',
+  'Consumer Goods',
+  'Manufacturing',
+  'Media & Entertainment',
+  'Agriculture',
+  'Blockchain & Crypto',
+  'Artificial Intelligence',
+  'Biotech',
+  'Transportation',
+  'Cybersecurity',
+] as const;
+
+export const JOB_ROLES = [
+  'Product Manager',
+  'Strategy Consultant',
+  'Marketing Director',
+  'Chief Financial Officer',
+  'VP of Operations',
+  'Business Development Lead',
+  'Data Science Director',
+  'Head of Partnerships',
+  'Growth Strategist',
+  'Investment Analyst',
+  'Managing Director',
+  'Chief Revenue Officer',
+  'Innovation Lead',
+  'Venture Partner',
+  'Division President',
+  'Head of M&A',
+] as const;
+
+export const BUSINESS_TYPES = [
+  'Tech Startup',
+  'Restaurant Chain',
+  'E-commerce Store',
+  'Consulting Firm',
+  'Real Estate Agency',
+  'SaaS Platform',
+  'Digital Media Company',
+  'Logistics Provider',
+  'Retail Franchise',
+  'FinTech Venture',
+  'Green Energy Startup',
+  'Healthcare Clinic',
+] as const;
+
+export const RISK_EVENTS = [
+  'Market Crash',
+  'Lawsuit',
+  'Regulatory Fine',
+  'Data Breach',
+  'Key Employee Departure',
+  'Supply Chain Disruption',
+  'Competitor Undercut',
+  'Tax Audit',
+  'Patent Dispute',
+  'Natural Disaster Impact',
+  'Public Relations Crisis',
+  'Currency Fluctuation',
+] as const;
+
+export const SKILL_CHALLENGES = [
+  'Public Speaking Contest',
+  'Hackathon',
+  'Negotiation Tournament',
+  'Strategy Competition',
+  'Leadership Summit Challenge',
+  'Investment Pitch Contest',
+  'Crisis Simulation Exercise',
+  'Innovation Sprint',
+  'Business Plan Competition',
+  'Debate Championship',
+  'Analytics Challenge',
+  'Executive Case Study',
+] as const;
+
+export const SOCIAL_EVENTS = [
+  'Industry Mixer',
+  'Charity Gala',
+  'Alumni Reunion',
+  'Investor Dinner',
+  'Tech Conference',
+  'Board Game Night',
+  'Startup Demo Day',
+  'Venture Capital Summit',
+  'Founders Meetup',
+  'Executive Retreat',
+  'Award Ceremony',
+  'Networking Brunch',
+] as const;
+
+export const PARTNER_NAMES = [
+  'Alex Rivera',
+  'Jordan Chen',
+  'Sam Patel',
+  'Morgan Huang',
+  'Casey Okafor',
+  'Riley Kim',
+  'Drew Nakamura',
+  'Taylor Brooks',
+  'Jamie Santos',
+  'Quinn Anderson',
+  'Avery Johansson',
+  'Blake Martinez',
+  'Reese Kapoor',
+  'Dana Volkov',
+  'Skyler Thompson',
+] as const;
