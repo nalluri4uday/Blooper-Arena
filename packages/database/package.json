@@ -17,13 +17,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "drizzle-orm": "^0.44.0",
     "@neondatabase/serverless": "^0.10.0",
+    "drizzle-orm": "^0.44.0",
     "pg": "^8.13.0"
   },
   "devDependencies": {
     "@blooper-arena/tsconfig": "workspace:*",
     "@types/pg": "^8.11.0",
+    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.30.0",
     "tsx": "^4.0.0",
     "typescript": "^5.7.0"

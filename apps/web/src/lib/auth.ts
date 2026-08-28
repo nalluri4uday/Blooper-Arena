@@ -1,10 +1,19 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { getDb } from './db';
+import { users, sessions, accounts, verifications } from '@blooper-arena/database/schema';
 
 function createAuth() {
   return betterAuth({
-    database: drizzleAdapter(getDb(), { provider: 'pg' }),
+    database: drizzleAdapter(getDb(), {
+      provider: 'pg',
+      schema: {
+        user: users,
+        session: sessions,
+        account: accounts,
+        verification: verifications,
+      },
+    }),
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,

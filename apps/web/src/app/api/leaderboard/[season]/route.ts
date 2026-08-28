@@ -6,7 +6,7 @@ import {
   leaderboardSnapshots,
   characters,
 } from '@blooper-arena/database/schema';
-import { eq, and, desc, sql, gt } from 'drizzle-orm';
+import { eq, and, desc, sql, gt, inArray } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
@@ -79,7 +79,7 @@ export async function GET(
       ? await db
           .select({ id: characters.id, displayName: characters.displayName })
           .from(characters)
-          .where(sql`${characters.id} = ANY(${charIds})`)
+          .where(inArray(characters.id, charIds))
       : [];
     const nameMap = new Map(charNames.map((c) => [c.id, c.displayName]));
 
@@ -128,7 +128,7 @@ export async function GET(
     ? await db
         .select({ id: characters.id, displayName: characters.displayName })
         .from(characters)
-        .where(sql`${characters.id} = ANY(${charIds})`)
+        .where(inArray(characters.id, charIds))
     : [];
   const nameMap = new Map(charNames.map((c) => [c.id, c.displayName]));
 

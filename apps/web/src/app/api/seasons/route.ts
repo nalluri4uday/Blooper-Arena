@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { seasons, seasonPlayers } from '@blooper-arena/database/schema';
-import { eq, sql, desc } from 'drizzle-orm';
+import { seasons, seasonPlayers, characters } from '@blooper-arena/database/schema';
+import { eq, sql, desc, inArray } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth';
 import { headers } from 'next/headers';
 
@@ -30,16 +30,16 @@ export async function GET() {
     const session = await getAuth().api.getSession({ headers: await headers() });
     if (session) {
       const userChars = await db
-        .select({ id: sql<string>`c.id` })
-        .from(sql`characters c`)
-        .where(sql`c.user_id = ${session.user.id}`);
+        .select({ id: characters.id })
+        .from(characters)
+        .where(eq(characters.userId, session.user.id));
 
       if (userChars.length > 0) {
         const charIds = userChars.map((c) => c.id);
         const joined = await db
           .select({ seasonId: seasonPlayers.seasonId })
           .from(seasonPlayers)
-          .where(sql`${seasonPlayers.characterId} = ANY(${charIds})`);
+          .where(inArray(seasonPlayers.characterId, charIds));
 
         joinedSeasons = new Set(joined.map((j) => j.seasonId));
       }
