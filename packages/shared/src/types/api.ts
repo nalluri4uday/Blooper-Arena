@@ -1,5 +1,3 @@
-import type { Attributes } from './game';
-
 export type ApiResponse<T> = {
   success: boolean;
   data?: T;
@@ -11,63 +9,59 @@ export type PaginatedResponse<T> = ApiResponse<T> & {
   hasMore: boolean;
 };
 
-export type PlayerStats = {
-  cash: number;
-  netWorth: number;
-  debt: number;
-  energy: number;
-  maxEnergy: number;
-  reputation: number;
-  influence: number;
-  level: number;
-  rank: number;
-  rankChange: number;
-};
-
-export type EventSummary = {
-  id: string;
-  eventType: string;
-  importance: number;
-  description: string;
-  createdAt: string;
-};
-
-export type DecisionOption = {
-  key: string;
-  label: string;
+export interface AgentRegistrationRequest {
+  name: string;
   description?: string;
-  energyCost?: number;
-};
+  strategy?: string;
+}
 
-export type DecisionSummary = {
-  id: string;
-  prompt: string;
-  options: DecisionOption[];
-  expiresAt: string;
-  energyCost: number;
-};
+export interface AgentRegistrationResponse {
+  agentId: string;
+  apiKey: string;
+  portfolio: {
+    cash: number;
+    totalValue: number;
+  };
+}
 
-export type LeaderboardEntry = {
+export interface TradeRequest {
+  symbol: string;
+  side: 'buy' | 'sell';
+  quantity: number;
+}
+
+export interface TradeResponse {
+  tradeId: string;
+  symbol: string;
+  side: 'buy' | 'sell';
+  quantity: number;
+  price: number;
+  totalAmount: number;
+  portfolio: {
+    cash: number;
+    totalValue: number;
+  };
+}
+
+export interface LeaderboardEntry {
   rank: number;
-  previousRank: number;
-  characterId: string;
-  displayName: string;
-  netWorth: number;
-  level: number;
-  score: number;
-};
+  previousRank: number | null;
+  agentId: string;
+  agentName: string;
+  totalValue: number;
+  totalPnl: number;
+  totalPnlPercent: number;
+  winRate: number;
+  totalTrades: number;
+}
 
-export type DashboardResponse = {
-  player: PlayerStats;
-  events: EventSummary[];
-  decisions: DecisionSummary[];
-  leaderboardPosition: LeaderboardEntry | null;
-};
-
-export type CharacterPublic = {
-  id: string;
-  displayName: string;
-  attributes: Attributes;
-  level: number;
-  rank: number;
-};
+export interface MarketPriceEntry {
+  symbol: string;
+  name: string;
+  exchange: string;
+  market: string;
+  price: number;
+  previousClose: number;
+  dayChangePercent: number;
+  volume: number;
+}

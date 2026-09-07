@@ -1,78 +1,90 @@
-import {
-  seasons,
-  seasonPlayers,
-  leaderboardSnapshots,
-  characters,
-} from '@blooper-arena/database/schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { leaderboard, portfolios, agents, trades } from '@blooper-arena/database/schema';
+import { eq, desc, sql, count, and } from 'drizzle-orm';
 
-type Db = ReturnType<typeof import('@blooper-arena/database/client').createPooledDb>;
+export async function runLeaderboardCalculator(db: any) {
+  console.log('[leaderboard-calculator] Starting leaderboard calculation...');
 
-export async function calculateLeaderboard(db: Db): Promise<void> {
-  // Find active season
-  const activeSeason = await db
-    .select()
-    .from(seasons)
-    .where(eq(seasons.status, 'active'))
-    .limit(1);
+  try {
+    // Get all agent portfolios sorted by total value
+    const agentPortfolios = await db
+      .select({
+        agentId: agents.id,
+        agentName: agents.name,
+        totalValue: portfolios.totalValue,
+        totalPnl: portfolios.totalPnl,
+        totalPnlPercent: portfolios.totalPnlPercent,
+        totalTrades: agents.totalTrades,
+      })
+      .from(agents)
+      .innerJoin(portfolios, eq(agents.id, portfolios.agentId))
+      .where(eq(agents.status, 'active'))
+      .orderBy(desc(portfolios.totalValue));
 
-  if (activeSeason.length === 0) return;
+    // Get existing leaderboard for previous ranks
+    const existingLeaderboard = await db.select().from(leaderboard);
+    const previousRanks = new Map(existingLeaderboard.map((l: any) => [l.agentId, l.rank]));
 
-  const seasonId = activeSeason[0].id;
-  const capturedAt = new Date();
+    // Calculate win rates per agent
+    // A "winning" trade is a sell where price > avg buy price of the stock
+    // Simplified: count trades with status 'executed' where side='sell'
 
-  // Get all players sorted by net worth
-  const players = await db
-    .select({
-      characterId: seasonPlayers.characterId,
-      netWorth: seasonPlayers.netWorth,
-      level: seasonPlayers.level,
-      reputation: seasonPlayers.reputation,
-    })
-    .from(seasonPlayers)
-    .where(eq(seasonPlayers.seasonId, seasonId))
-    .orderBy(desc(seasonPlayers.netWorth));
+    let updated = 0;
+    for (let i = 0; i < agentPortfolios.length; i++) {
+      const ap = agentPortfolios[i];
+      const rank = i + 1;
+      const prevRank = previousRanks.get(ap.agentId) ?? null;
 
-  if (players.length === 0) return;
+      // Calculate win rate from trades
+      const sellTrades = await db
+        .select({ count: count() })
+        .from(trades)
+        .where(
+          and(
+            eq(trades.agentId, ap.agentId),
+            eq(trades.status, 'executed'),
+          ),
+        );
 
-  // Get previous snapshot for rank change tracking
-  const previousSnapshot = await db
-    .select({
-      characterId: leaderboardSnapshots.characterId,
-      rank: leaderboardSnapshots.rank,
-    })
-    .from(leaderboardSnapshots)
-    .where(eq(leaderboardSnapshots.seasonId, seasonId))
-    .orderBy(desc(leaderboardSnapshots.capturedAt))
-    .limit(players.length);
+      const totalTradeCount = Number(sellTrades[0]?.count ?? 0);
 
-  const previousRankMap = new Map<string, number>();
-  for (const snap of previousSnapshot) {
-    if (!previousRankMap.has(snap.characterId)) {
-      previousRankMap.set(snap.characterId, snap.rank);
+      // Upsert leaderboard entry
+      const existingEntry = existingLeaderboard.find((l: any) => l.agentId === ap.agentId);
+
+      if (existingEntry) {
+        await db.update(leaderboard).set({
+          rank,
+          previousRank: prevRank,
+          totalValue: ap.totalValue,
+          totalPnl: ap.totalPnl,
+          totalPnlPercent: ap.totalPnlPercent,
+          winRate: ap.totalTrades > 0 ? (ap.totalPnl > 0 ? 100 : 0) : 0, // Simplified
+          totalTrades: ap.totalTrades,
+          updatedAt: new Date(),
+        }).where(eq(leaderboard.agentId, ap.agentId));
+      } else {
+        await db.insert(leaderboard).values({
+          agentId: ap.agentId,
+          rank,
+          previousRank: prevRank,
+          totalValue: ap.totalValue,
+          totalPnl: ap.totalPnl,
+          totalPnlPercent: ap.totalPnlPercent,
+          winRate: 0,
+          totalTrades: ap.totalTrades,
+        });
+      }
+
+      // Also update agent's winRate
+      await db.update(agents).set({
+        winRate: ap.totalPnl > 0 ? 100 : 0, // Simplified win rate
+        updatedAt: new Date(),
+      }).where(eq(agents.id, ap.agentId));
+
+      updated++;
     }
-  }
 
-  // Insert new snapshot
-  const snapshotRows = players.map((player, index) => {
-    const rank = index + 1;
-    const score = player.netWorth + player.level * 1000 + player.reputation * 100;
-    return {
-      id: crypto.randomUUID(),
-      seasonId,
-      characterId: player.characterId,
-      rank,
-      previousRank: previousRankMap.get(player.characterId) ?? null,
-      netWorth: player.netWorth,
-      score,
-      capturedAt,
-    };
-  });
-
-  // Batch insert in chunks to avoid memory issues
-  const CHUNK_SIZE = 100;
-  for (let i = 0; i < snapshotRows.length; i += CHUNK_SIZE) {
-    const chunk = snapshotRows.slice(i, i + CHUNK_SIZE);
-    await db.insert(leaderboardSnapshots).values(chunk);
+    console.log(`[leaderboard-calculator] Updated ${updated} leaderboard entries`);
+  } catch (error) {
+    console.error('[leaderboard-calculator] Error:', error);
   }
 }

@@ -32,7 +32,7 @@ export default function LoginPage() {
         throw new Error(data.message || 'Invalid credentials');
       }
 
-      router.push('/dashboard');
+      router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

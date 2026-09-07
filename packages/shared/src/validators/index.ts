@@ -1,3 +1,1 @@
-export * from './character';
-export * from './decision';
-export * from './season';
+// Trading arena validators will be added here

@@ -1,3 +1,2 @@
-export * from "./schema/index";
-export * from "./client";
-export * from "./types";
+export * from './schema';
+export * from './client';

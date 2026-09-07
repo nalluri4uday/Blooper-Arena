@@ -10,14 +10,16 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "fastify": "^5.0.0",
-    "@fastify/cors": "^10.0.0",
-    "node-cron": "^3.0.3",
-    "pg": "^8.13.0",
-    "drizzle-orm": "^0.44.0",
     "@blooper-arena/database": "workspace:*",
-    "@blooper-arena/game-engine": "workspace:*",
-    "@blooper-arena/shared": "workspace:*"
+    "@blooper-arena/trading-engine": "workspace:*",
+    "@blooper-arena/shared": "workspace:*",
+    "@fastify/cors": "^10.0.0",
+    "@fastify/rate-limit": "^11.2.0",
+    "@sentry/node": "^10.71.0",
+    "drizzle-orm": "^0.44.0",
+    "fastify": "^5.0.0",
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.0"
   },
   "devDependencies": {
     "@blooper-arena/tsconfig": "workspace:*",

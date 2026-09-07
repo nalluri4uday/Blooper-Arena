@@ -1,13 +1,22 @@
+import * as Sentry from '@sentry/node';
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: 0.1,
+  enabled: process.env.NODE_ENV === 'production',
+});
+
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import cron from 'node-cron';
 import { createPooledDb } from '@blooper-arena/database/client';
 import { healthRoute } from './routes/health.js';
-import { triggerTickRoute } from './routes/trigger-tick.js';
-import { processTickBatch } from './jobs/tick-processor.js';
-import { calculateLeaderboard } from './jobs/leaderboard-calculator.js';
-import { replenishEnergy } from './jobs/energy-replenisher.js';
-import { expireDecisions } from './jobs/decision-expirer.js';
+import { runPriceFetcher } from './jobs/price-fetcher.js';
+import { runPortfolioCalculator } from './jobs/portfolio-calculator.js';
+import { runLeaderboardCalculator } from './jobs/leaderboard-calculator.js';
+import { runSnapshotCleaner } from './jobs/snapshot-cleaner.js';
+import { runStockSeeder } from './jobs/seed-stocks.js';
 
 const PORT = parseInt(process.env.WORKER_PORT || '3001', 10);
 const API_KEY = process.env.WORKER_API_KEY || 'dev-api-key';
@@ -19,6 +28,9 @@ const db = createPooledDb(process.env.DATABASE_URL!);
 
 // CORS
 await app.register(cors, { origin: true });
+
+// Rate limiting
+await app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
 
 // Decorate with db and api key for routes
 app.decorate('db', db);
@@ -36,40 +48,45 @@ app.addHook('onRequest', async (request, reply) => {
 
 // Routes
 app.register(healthRoute);
-app.register(triggerTickRoute, { prefix: '/admin' });
 
-// Cron jobs
-// Tick processing: every 30 minutes
-cron.schedule('*/30 * * * *', async () => {
-  app.log.info('Running tick processing...');
-  try {
-    const processed = await processTickBatch(db);
-    app.log.info(`Tick processing complete. Processed ${processed} players.`);
-  } catch (err) {
-    app.log.error(err, 'Tick processing failed');
-  }
+// Admin: Seed stocks
+app.post('/admin/seed-stocks', async (_request, reply) => {
+  await runStockSeeder(db);
+  reply.send({ success: true, message: 'Stock seeding complete' });
 });
 
-// Energy replenishment & decision expiry: every 15 minutes
-cron.schedule('*/15 * * * *', async () => {
-  app.log.info('Running energy replenishment and decision expiry...');
-  try {
-    await Promise.all([replenishEnergy(db), expireDecisions(db)]);
-    app.log.info('Energy/decision jobs complete.');
-  } catch (err) {
-    app.log.error(err, 'Energy/decision jobs failed');
-  }
+// Admin: Trigger price fetch
+app.post('/admin/fetch-prices', async (_request, reply) => {
+  await runPriceFetcher(db);
+  reply.send({ success: true, message: 'Price fetch complete' });
 });
 
-// Leaderboard calculation: every hour
-cron.schedule('0 * * * *', async () => {
-  app.log.info('Calculating leaderboard...');
-  try {
-    await calculateLeaderboard(db);
-    app.log.info('Leaderboard calculation complete.');
-  } catch (err) {
-    app.log.error(err, 'Leaderboard calculation failed');
-  }
+// Admin: Trigger portfolio recalculation
+app.post('/admin/recalculate', async (_request, reply) => {
+  await runPortfolioCalculator(db);
+  await runLeaderboardCalculator(db);
+  reply.send({ success: true, message: 'Recalculation complete' });
+});
+
+// Cron Jobs
+// Price fetcher: every 15 minutes
+cron.schedule('*/15 * * * *', () => {
+  runPriceFetcher(db).catch(err => console.error('Price fetcher cron error:', err));
+});
+
+// Portfolio calculator: every 15 minutes (offset by 2 min from price fetcher)
+cron.schedule('2,17,32,47 * * * *', () => {
+  runPortfolioCalculator(db).catch(err => console.error('Portfolio calculator cron error:', err));
+});
+
+// Leaderboard calculator: every 30 minutes
+cron.schedule('5,35 * * * *', () => {
+  runLeaderboardCalculator(db).catch(err => console.error('Leaderboard calculator cron error:', err));
+});
+
+// Snapshot cleaner: daily at midnight UTC
+cron.schedule('0 0 * * *', () => {
+  runSnapshotCleaner(db).catch(err => console.error('Snapshot cleaner cron error:', err));
 });
 
 // Self-ping to prevent Render free tier sleep: every 5 minutes

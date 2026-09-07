@@ -33,7 +33,7 @@ export default function RegisterPage() {
         throw new Error(data.message || 'Registration failed');
       }
 
-      router.push('/character/create');
+      router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {

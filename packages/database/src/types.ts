@@ -5,17 +5,13 @@ import type {
   accounts,
   verifications,
 } from "./schema/users";
-import type { characters } from "./schema/characters";
-import type { seasons } from "./schema/seasons";
-import type { seasonPlayers } from "./schema/season-players";
-import type { ledgerEntries } from "./schema/ledger-entries";
-import type { opportunities } from "./schema/opportunities";
-import type { events } from "./schema/events";
-import type { decisions } from "./schema/decisions";
-import type { leaderboardSnapshots } from "./schema/leaderboard-snapshots";
-import type { relationships } from "./schema/relationships";
-import type { businesses } from "./schema/businesses";
-import type { aiJobs } from "./schema/ai-jobs";
+import type { agents } from "./schema/agents";
+import type { stocks } from "./schema/stocks";
+import type { portfolios } from "./schema/portfolios";
+import type { holdings } from "./schema/holdings";
+import type { trades } from "./schema/trades";
+import type { leaderboard } from "./schema/leaderboard";
+import type { marketSnapshots } from "./schema/market-snapshots";
 
 // ── Users & Auth ───────────────────────────────────────────────────────────────
 
@@ -31,59 +27,37 @@ export type NewAccount = InferInsertModel<typeof accounts>;
 export type Verification = InferSelectModel<typeof verifications>;
 export type NewVerification = InferInsertModel<typeof verifications>;
 
-// ── Characters ─────────────────────────────────────────────────────────────────
+// ── Agents ─────────────────────────────────────────────────────────────────────
 
-export type Character = InferSelectModel<typeof characters>;
-export type NewCharacter = InferInsertModel<typeof characters>;
+export type Agent = InferSelectModel<typeof agents>;
+export type NewAgent = InferInsertModel<typeof agents>;
 
-// ── Seasons ────────────────────────────────────────────────────────────────────
+// ── Stocks ─────────────────────────────────────────────────────────────────────
 
-export type Season = InferSelectModel<typeof seasons>;
-export type NewSeason = InferInsertModel<typeof seasons>;
+export type Stock = InferSelectModel<typeof stocks>;
+export type NewStock = InferInsertModel<typeof stocks>;
 
-// ── Season Players ─────────────────────────────────────────────────────────────
+// ── Portfolios ─────────────────────────────────────────────────────────────────
 
-export type SeasonPlayer = InferSelectModel<typeof seasonPlayers>;
-export type NewSeasonPlayer = InferInsertModel<typeof seasonPlayers>;
+export type Portfolio = InferSelectModel<typeof portfolios>;
+export type NewPortfolio = InferInsertModel<typeof portfolios>;
 
-// ── Ledger Entries ─────────────────────────────────────────────────────────────
+// ── Holdings ───────────────────────────────────────────────────────────────────
 
-export type LedgerEntry = InferSelectModel<typeof ledgerEntries>;
-export type NewLedgerEntry = InferInsertModel<typeof ledgerEntries>;
+export type Holding = InferSelectModel<typeof holdings>;
+export type NewHolding = InferInsertModel<typeof holdings>;
 
-// ── Opportunities ──────────────────────────────────────────────────────────────
+// ── Trades ─────────────────────────────────────────────────────────────────────
 
-export type Opportunity = InferSelectModel<typeof opportunities>;
-export type NewOpportunity = InferInsertModel<typeof opportunities>;
+export type Trade = InferSelectModel<typeof trades>;
+export type NewTrade = InferInsertModel<typeof trades>;
 
-// ── Events ─────────────────────────────────────────────────────────────────────
+// ── Leaderboard ────────────────────────────────────────────────────────────────
 
-export type Event = InferSelectModel<typeof events>;
-export type NewEvent = InferInsertModel<typeof events>;
+export type LeaderboardRow = InferSelectModel<typeof leaderboard>;
+export type NewLeaderboardRow = InferInsertModel<typeof leaderboard>;
 
-// ── Decisions ──────────────────────────────────────────────────────────────────
+// ── Market Snapshots ───────────────────────────────────────────────────────────
 
-export type Decision = InferSelectModel<typeof decisions>;
-export type NewDecision = InferInsertModel<typeof decisions>;
-
-// ── Leaderboard Snapshots ──────────────────────────────────────────────────────
-
-export type LeaderboardSnapshot = InferSelectModel<typeof leaderboardSnapshots>;
-export type NewLeaderboardSnapshot = InferInsertModel<
-  typeof leaderboardSnapshots
->;
-
-// ── Relationships ──────────────────────────────────────────────────────────────
-
-export type Relationship = InferSelectModel<typeof relationships>;
-export type NewRelationship = InferInsertModel<typeof relationships>;
-
-// ── Businesses ─────────────────────────────────────────────────────────────────
-
-export type Business = InferSelectModel<typeof businesses>;
-export type NewBusiness = InferInsertModel<typeof businesses>;
-
-// ── AI Jobs ────────────────────────────────────────────────────────────────────
-
-export type AiJob = InferSelectModel<typeof aiJobs>;
-export type NewAiJob = InferInsertModel<typeof aiJobs>;
+export type MarketSnapshot = InferSelectModel<typeof marketSnapshots>;
+export type NewMarketSnapshot = InferInsertModel<typeof marketSnapshots>;

@@ -16,6 +16,9 @@
   "engines": {
     "node": ">=20"
   },
+  "overrides": {
+    "drizzle-orm": "^0.44.0"
+  },
   "devDependencies": {
     "turbo": "^2.10.12"
   }
