@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
     console.error('Agent registration error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', detail: error?.message || String(error) },
+      { error: 'Internal server error' },
       { status: 500 },
     );
   }
