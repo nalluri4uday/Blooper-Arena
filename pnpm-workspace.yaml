@@ -4,3 +4,4 @@ packages:
   - "tooling/*"
 allowBuilds:
   '@sentry/cli': true
+  'esbuild': true
