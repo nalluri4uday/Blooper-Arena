@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml turbo.json ./
 COPY apps/worker/package.json apps/worker/
 COPY packages/database/package.json packages/database/
-COPY packages/game-engine/package.json packages/game-engine/
+COPY packages/trading-engine/package.json packages/trading-engine/
 COPY packages/shared/package.json packages/shared/
 COPY tooling/typescript/package.json tooling/typescript/
 
