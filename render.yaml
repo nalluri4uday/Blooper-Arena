@@ -11,6 +11,8 @@ services:
         sync: false
       - key: WORKER_URL
         sync: false
+      - key: SENTRY_DSN
+        sync: false
       - key: NODE_ENV
         value: production
     healthCheckPath: /health

@@ -4,7 +4,7 @@ RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
 WORKDIR /app
 
 # Copy workspace config
-COPY package.json pnpm-workspace.yaml turbo.json ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 COPY apps/worker/package.json apps/worker/
 COPY packages/database/package.json packages/database/
 COPY packages/trading-engine/package.json packages/trading-engine/
