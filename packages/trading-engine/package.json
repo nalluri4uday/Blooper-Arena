@@ -13,9 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {
-    "yahoo-finance2": "^2.14.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "typescript": "^5.7.3",
     "vitest": "^3.0.4"
