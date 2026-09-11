@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import {
   Bot,
   Wallet,
@@ -8,43 +9,28 @@ import {
   BarChart3,
   ArrowLeft,
 } from 'lucide-react';
+import { getDb } from '@/lib/db';
+import { agents, portfolios, holdings, trades, leaderboard } from '@blooper-arena/database/schema';
+import { eq, desc } from 'drizzle-orm';
 
-const agentData = {
-  id: 'a1',
-  name: 'AlphaBot',
-  description:
-    'A momentum-based trading agent that uses technical analysis and sentiment data to make trading decisions across Indian and US markets.',
-  strategy: 'Momentum',
-  createdAt: '2024-01-15',
-  stats: {
-    totalValue: '₹12,45,320',
-    totalPnl: '₹2,45,320',
-    totalPnlPercent: 24.53,
-    winRate: 68.2,
-    totalTrades: 1247,
-  },
-};
+export const revalidate = 60;
 
-const holdings = [
-  { symbol: 'RELIANCE.NS', qty: 50, avgPrice: '₹2,380.00', currentPrice: '₹2,450.30', pnl: '₹3,515', pnlPercent: 2.95 },
-  { symbol: 'TCS.NS', qty: 30, avgPrice: '₹3,750.00', currentPrice: '₹3,890.15', pnl: '₹4,204', pnlPercent: 3.74 },
-  { symbol: 'AAPL', qty: 25, avgPrice: '$188.50', currentPrice: '$195.30', pnl: '$170', pnlPercent: 3.61 },
-  { symbol: 'INFY.NS', qty: 100, avgPrice: '₹1,580.00', currentPrice: '₹1,620.45', pnl: '₹4,045', pnlPercent: 2.56 },
-  { symbol: 'MSFT', qty: 15, avgPrice: '$405.20', currentPrice: '$420.15', pnl: '$224', pnlPercent: 3.69 },
-  { symbol: 'HDFCBANK.NS', qty: 80, avgPrice: '₹1,560.00', currentPrice: '₹1,545.80', pnl: '-₹1,136', pnlPercent: -0.91 },
-  { symbol: 'NVDA', qty: 10, avgPrice: '$850.00', currentPrice: '$890.20', pnl: '$402', pnlPercent: 4.73 },
-];
+function formatCurrency(value: number, symbol?: string): string {
+  if (symbol && !symbol.endsWith('.NS') && !symbol.endsWith('.BO')) {
+    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
-const recentTrades = [
-  { date: '2024-03-15 14:32', symbol: 'RELIANCE.NS', side: 'buy' as const, qty: 20, price: '₹2,445.50', amount: '₹48,910' },
-  { date: '2024-03-15 10:15', symbol: 'AAPL', side: 'sell' as const, qty: 10, price: '$194.80', amount: '$1,948' },
-  { date: '2024-03-14 15:45', symbol: 'INFY.NS', side: 'buy' as const, qty: 50, price: '₹1,615.20', amount: '₹80,760' },
-  { date: '2024-03-14 11:20', symbol: 'NVDA', side: 'buy' as const, qty: 5, price: '$885.40', amount: '$4,427' },
-  { date: '2024-03-13 14:50', symbol: 'HDFCBANK.NS', side: 'sell' as const, qty: 30, price: '₹1,552.00', amount: '₹46,560' },
-  { date: '2024-03-13 09:30', symbol: 'TCS.NS', side: 'buy' as const, qty: 15, price: '₹3,875.60', amount: '₹58,134' },
-  { date: '2024-03-12 13:15', symbol: 'MSFT', side: 'buy' as const, qty: 10, price: '$412.30', amount: '$4,123' },
-  { date: '2024-03-12 10:05', symbol: 'ICICIBANK.NS', side: 'sell' as const, qty: 40, price: '₹1,092.50', amount: '₹43,700' },
-];
+function formatPortfolioValue(value: number): string {
+  if (value >= 10000000) {
+    return `₹${(value / 10000000).toFixed(2)} Cr`;
+  }
+  if (value >= 100000) {
+    return `₹${(value / 100000).toFixed(2)} L`;
+  }
+  return `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
 
 export async function generateMetadata({
   params,
@@ -52,8 +38,9 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  // In production, fetch agent name from DB. For now, use mock data.
-  const name = id === 'a1' ? 'AlphaBot' : `Agent ${id}`;
+  const db = getDb();
+  const [agent] = await db.select({ name: agents.name }).from(agents).where(eq(agents.id, id)).limit(1);
+  const name = agent?.name ?? `Agent ${id}`;
   return {
     title: `${name} | Blooper Arena`,
     description: `View the trading profile, portfolio and performance of ${name}.`,
@@ -65,8 +52,25 @@ export default async function AgentProfilePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await params; // consume the params promise
-  const agent = agentData;
+  const { id } = await params;
+  const db = getDb();
+
+  const [agent] = await db.select().from(agents).where(eq(agents.id, id)).limit(1);
+  if (!agent) return notFound();
+
+  const [portfolio] = await db.select().from(portfolios).where(eq(portfolios.agentId, id));
+  const agentHoldings = await db.select().from(holdings).where(eq(holdings.agentId, id));
+  const agentTrades = await db.select().from(trades).where(eq(trades.agentId, id)).orderBy(desc(trades.createdAt)).limit(20);
+  const [rank] = await db.select().from(leaderboard).where(eq(leaderboard.agentId, id));
+
+  const totalValue = portfolio?.totalValue ?? 0;
+  const totalPnl = portfolio?.totalPnl ?? 0;
+  const totalPnlPercent = portfolio?.totalPnlPercent ?? 0;
+  const winRate = rank?.winRate ?? agent.winRate ?? 0;
+  const totalTradesCount = rank?.totalTrades ?? agent.totalTrades ?? 0;
+
+  const hasHoldings = agentHoldings.length > 0;
+  const hasTrades = agentTrades.length > 0;
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12">
@@ -87,13 +91,17 @@ export default async function AgentProfilePage({
           </div>
           <div>
             <h1 className="text-3xl font-bold text-foreground">{agent.name}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{agent.description}</p>
+            {agent.description && (
+              <p className="mt-1 text-sm text-muted-foreground">{agent.description}</p>
+            )}
           </div>
         </div>
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-          <Target className="h-3.5 w-3.5" />
-          {agent.strategy}
-        </span>
+        {agent.strategy && (
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+            <Target className="h-3.5 w-3.5" />
+            {agent.strategy}
+          </span>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -101,25 +109,25 @@ export default async function AgentProfilePage({
         {[
           {
             label: 'Total Value',
-            value: agent.stats.totalValue,
+            value: formatPortfolioValue(totalValue),
             icon: Wallet,
             color: 'text-foreground',
           },
           {
             label: 'Total PnL',
-            value: `${agent.stats.totalPnl} (${agent.stats.totalPnlPercent >= 0 ? '+' : ''}${agent.stats.totalPnlPercent}%)`,
+            value: `${formatPortfolioValue(totalPnl)} (${totalPnlPercent >= 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}%)`,
             icon: TrendingUp,
-            color: agent.stats.totalPnlPercent >= 0 ? 'text-success' : 'text-destructive',
+            color: totalPnlPercent >= 0 ? 'text-success' : 'text-destructive',
           },
           {
             label: 'Win Rate',
-            value: `${agent.stats.winRate}%`,
+            value: `${winRate.toFixed(1)}%`,
             icon: Target,
             color: 'text-foreground',
           },
           {
             label: 'Total Trades',
-            value: agent.stats.totalTrades.toLocaleString(),
+            value: totalTradesCount.toLocaleString(),
             icon: BarChart3,
             color: 'text-foreground',
           },
@@ -141,56 +149,62 @@ export default async function AgentProfilePage({
       <div className="mb-10">
         <h2 className="mb-4 text-xl font-bold text-foreground">Holdings</h2>
         <div className="overflow-hidden rounded-xl border border-border bg-zinc-900/50">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                  <th className="px-6 py-4 font-medium">Symbol</th>
-                  <th className="px-6 py-4 font-medium text-right">Quantity</th>
-                  <th className="px-6 py-4 font-medium text-right">Avg Buy Price</th>
-                  <th className="px-6 py-4 font-medium text-right">Current Price</th>
-                  <th className="px-6 py-4 font-medium text-right">P&L</th>
-                  <th className="px-6 py-4 font-medium text-right">P&L%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {holdings.map((h) => (
-                  <tr
-                    key={h.symbol}
-                    className="border-b border-border/50 last:border-0 transition-colors hover:bg-zinc-800/50"
-                  >
-                    <td className="px-6 py-4 font-mono text-sm font-semibold text-foreground">
-                      {h.symbol}
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
-                      {h.qty}
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono text-sm text-muted-foreground">
-                      {h.avgPrice}
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
-                      {h.currentPrice}
-                    </td>
-                    <td
-                      className={`px-6 py-4 text-right font-mono text-sm ${
-                        h.pnlPercent >= 0 ? 'text-success' : 'text-destructive'
-                      }`}
-                    >
-                      {h.pnl}
-                    </td>
-                    <td
-                      className={`px-6 py-4 text-right font-mono text-sm ${
-                        h.pnlPercent >= 0 ? 'text-success' : 'text-destructive'
-                      }`}
-                    >
-                      {h.pnlPercent >= 0 ? '+' : ''}
-                      {h.pnlPercent.toFixed(2)}%
-                    </td>
+          {hasHoldings ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border text-left text-sm text-muted-foreground">
+                    <th className="px-6 py-4 font-medium">Symbol</th>
+                    <th className="px-6 py-4 font-medium text-right">Quantity</th>
+                    <th className="px-6 py-4 font-medium text-right">Avg Buy Price</th>
+                    <th className="px-6 py-4 font-medium text-right">Current Price</th>
+                    <th className="px-6 py-4 font-medium text-right">P&L</th>
+                    <th className="px-6 py-4 font-medium text-right">P&L%</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {agentHoldings.map((h) => (
+                    <tr
+                      key={h.id}
+                      className="border-b border-border/50 last:border-0 transition-colors hover:bg-zinc-800/50"
+                    >
+                      <td className="px-6 py-4 font-mono text-sm font-semibold text-foreground">
+                        {h.symbol}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
+                        {h.quantity}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-sm text-muted-foreground">
+                        {formatCurrency(h.avgBuyPrice, h.symbol)}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
+                        {formatCurrency(h.currentPrice, h.symbol)}
+                      </td>
+                      <td
+                        className={`px-6 py-4 text-right font-mono text-sm ${
+                          h.pnlPercent >= 0 ? 'text-success' : 'text-destructive'
+                        }`}
+                      >
+                        {formatCurrency(Math.abs(h.pnl), h.symbol).replace(/^([$₹])/, h.pnl < 0 ? '-$1' : '$1')}
+                      </td>
+                      <td
+                        className={`px-6 py-4 text-right font-mono text-sm ${
+                          h.pnlPercent >= 0 ? 'text-success' : 'text-destructive'
+                        }`}
+                      >
+                        {h.pnlPercent >= 0 ? '+' : ''}
+                        {h.pnlPercent.toFixed(2)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="px-6 py-12 text-center text-muted-foreground">
+              No holdings yet.
+            </div>
+          )}
         </div>
       </div>
 
@@ -198,55 +212,67 @@ export default async function AgentProfilePage({
       <div>
         <h2 className="mb-4 text-xl font-bold text-foreground">Recent Trades</h2>
         <div className="overflow-hidden rounded-xl border border-border bg-zinc-900/50">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                  <th className="px-6 py-4 font-medium">Date</th>
-                  <th className="px-6 py-4 font-medium">Symbol</th>
-                  <th className="px-6 py-4 font-medium">Side</th>
-                  <th className="px-6 py-4 font-medium text-right">Quantity</th>
-                  <th className="px-6 py-4 font-medium text-right">Price</th>
-                  <th className="px-6 py-4 font-medium text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentTrades.map((t, i) => (
-                  <tr
-                    key={i}
-                    className="border-b border-border/50 last:border-0 transition-colors hover:bg-zinc-800/50"
-                  >
-                    <td className="px-6 py-4 font-mono text-sm text-muted-foreground">
-                      {t.date}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-sm font-semibold text-foreground">
-                      {t.symbol}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${
-                          t.side === 'buy'
-                            ? 'bg-success/10 text-success'
-                            : 'bg-destructive/10 text-destructive'
-                        }`}
-                      >
-                        {t.side.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
-                      {t.qty}
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
-                      {t.price}
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
-                      {t.amount}
-                    </td>
+          {hasTrades ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border text-left text-sm text-muted-foreground">
+                    <th className="px-6 py-4 font-medium">Date</th>
+                    <th className="px-6 py-4 font-medium">Symbol</th>
+                    <th className="px-6 py-4 font-medium">Side</th>
+                    <th className="px-6 py-4 font-medium text-right">Quantity</th>
+                    <th className="px-6 py-4 font-medium text-right">Price</th>
+                    <th className="px-6 py-4 font-medium text-right">Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {agentTrades.map((t) => (
+                    <tr
+                      key={t.id}
+                      className="border-b border-border/50 last:border-0 transition-colors hover:bg-zinc-800/50"
+                    >
+                      <td className="px-6 py-4 font-mono text-sm text-muted-foreground">
+                        {new Date(t.createdAt).toLocaleString('en-IN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-sm font-semibold text-foreground">
+                        {t.symbol}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${
+                            t.side === 'buy'
+                              ? 'bg-success/10 text-success'
+                              : 'bg-destructive/10 text-destructive'
+                          }`}
+                        >
+                          {t.side.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
+                        {t.quantity}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
+                        {formatCurrency(t.price, t.symbol)}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
+                        {formatCurrency(t.totalAmount, t.symbol)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="px-6 py-12 text-center text-muted-foreground">
+              No trades yet.
+            </div>
+          )}
         </div>
       </div>
     </div>

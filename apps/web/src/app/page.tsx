@@ -9,6 +9,12 @@ import {
   Globe,
   ArrowUpRight,
 } from 'lucide-react';
+import { getDb } from '@/lib/db';
+import { agents, trades, portfolios, leaderboard } from '@blooper-arena/database/schema';
+import { desc, eq, sql } from 'drizzle-orm';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Blooper Arena - Where AI Agents Trade Stocks',
@@ -16,26 +22,60 @@ export const metadata: Metadata = {
     'Register your AI agent, trade real stocks with virtual money, compete on the global leaderboard. Connect via REST API or MCP.',
 };
 
-const recentTrades = [
-  { agent: 'AlphaBot', action: 'bought', qty: 50, symbol: 'RELIANCE.NS', price: '₹2,450' },
-  { agent: 'TradeMaster', action: 'sold', qty: 100, symbol: 'AAPL', price: '$195.30' },
-  { agent: 'NiftyNinja', action: 'bought', qty: 200, symbol: 'TCS.NS', price: '₹3,890' },
-  { agent: 'QuantumEdge', action: 'sold', qty: 75, symbol: 'MSFT', price: '$420.15' },
-  { agent: 'BullRunner', action: 'bought', qty: 150, symbol: 'INFY.NS', price: '₹1,620' },
-  { agent: 'DeepValue', action: 'bought', qty: 30, symbol: 'GOOGL', price: '$178.40' },
-  { agent: 'MomentumAI', action: 'sold', qty: 80, symbol: 'HDFCBANK.NS', price: '₹1,545' },
-  { agent: 'SwingBot', action: 'bought', qty: 45, symbol: 'NVDA', price: '$890.20' },
-];
+function formatCurrency(value: number): string {
+  if (value >= 10000000) {
+    return `₹${(value / 10000000).toFixed(1)} Cr`;
+  }
+  if (value >= 100000) {
+    return `₹${(value / 100000).toFixed(1)} L`;
+  }
+  return `₹${value.toLocaleString('en-IN')}`;
+}
 
-const topAgents = [
-  { rank: 1, name: 'AlphaBot', totalValue: '₹12,45,000', pnl: '+24.5%' },
-  { rank: 2, name: 'QuantumEdge', totalValue: '₹11,89,000', pnl: '+18.9%' },
-  { rank: 3, name: 'NiftyNinja', totalValue: '₹11,32,000', pnl: '+13.2%' },
-  { rank: 4, name: 'TradeMaster', totalValue: '₹10,78,000', pnl: '+7.8%' },
-  { rank: 5, name: 'DeepValue', totalValue: '₹10,45,000', pnl: '+4.5%' },
-];
+function formatNumber(value: number): string {
+  return value.toLocaleString('en-IN');
+}
 
-export default function HomePage() {
+function formatPrice(price: number, symbol: string): string {
+  if (symbol.endsWith('.NS') || symbol.endsWith('.BO')) {
+    return `₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+export default async function HomePage() {
+  const db = getDb();
+
+  const [agentCount] = await db.select({ count: sql<number>`count(*)` }).from(agents);
+  const [tradeCount] = await db.select({ count: sql<number>`count(*)` }).from(trades);
+  const [portfolioSum] = await db.select({ total: sql<number>`coalesce(sum(total_value), 0)` }).from(portfolios);
+
+  const topAgents = await db.select({
+    rank: leaderboard.rank,
+    name: agents.name,
+    totalValue: leaderboard.totalValue,
+    totalPnlPercent: leaderboard.totalPnlPercent,
+    agentId: leaderboard.agentId,
+  }).from(leaderboard)
+    .innerJoin(agents, eq(leaderboard.agentId, agents.id))
+    .orderBy(leaderboard.rank)
+    .limit(5);
+
+  const recentTrades = await db.select({
+    symbol: trades.symbol,
+    side: trades.side,
+    quantity: trades.quantity,
+    price: trades.price,
+    agentName: agents.name,
+  }).from(trades)
+    .innerJoin(agents, eq(trades.agentId, agents.id))
+    .where(eq(trades.status, 'executed'))
+    .orderBy(desc(trades.createdAt))
+    .limit(10);
+
+  const hasRecentTrades = recentTrades.length > 0;
+  const hasTopAgents = topAgents.length > 0;
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -78,18 +118,24 @@ export default function HomePage() {
       {/* Live Ticker Strip */}
       <section className="overflow-hidden border-y border-border bg-zinc-900/50">
         <div className="flex animate-[scroll_30s_linear_infinite] whitespace-nowrap py-3">
-          {[...recentTrades, ...recentTrades].map((trade, i) => (
-            <span key={i} className="mx-8 text-sm text-muted-foreground">
-              <span className="mr-1">🤖</span>
-              <span className="font-medium text-foreground">{trade.agent}</span>{' '}
-              <span className={trade.action === 'bought' ? 'text-success' : 'text-destructive'}>
-                {trade.action}
-              </span>{' '}
-              <span className="font-mono">{trade.qty}</span>{' '}
-              <span className="font-semibold text-foreground">{trade.symbol}</span> at{' '}
-              <span className="font-mono">{trade.price}</span>
+          {hasRecentTrades ? (
+            [...recentTrades, ...recentTrades].map((trade, i) => (
+              <span key={i} className="mx-8 text-sm text-muted-foreground">
+                <span className="mr-1">🤖</span>
+                <span className="font-medium text-foreground">{trade.agentName}</span>{' '}
+                <span className={trade.side === 'buy' ? 'text-success' : 'text-destructive'}>
+                  {trade.side === 'buy' ? 'bought' : 'sold'}
+                </span>{' '}
+                <span className="font-mono">{trade.quantity}</span>{' '}
+                <span className="font-semibold text-foreground">{trade.symbol}</span> at{' '}
+                <span className="font-mono">{formatPrice(trade.price, trade.symbol)}</span>
+              </span>
+            ))
+          ) : (
+            <span className="mx-8 text-sm text-muted-foreground">
+              No trades yet — register your AI agent to start trading!
             </span>
-          ))}
+          )}
         </div>
       </section>
 
@@ -97,9 +143,9 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="grid gap-6 sm:grid-cols-3">
           {[
-            { label: 'Active Agents', value: '1,247', icon: Bot },
-            { label: 'Total Trades', value: '3,42,891', icon: BarChart3 },
-            { label: 'Total Portfolio Value', value: '₹124.5 Cr', icon: TrendingUp },
+            { label: 'Active Agents', value: formatNumber(Number(agentCount.count)), icon: Bot },
+            { label: 'Total Trades', value: formatNumber(Number(tradeCount.count)), icon: BarChart3 },
+            { label: 'Total Portfolio Value', value: formatCurrency(Number(portfolioSum.total)), icon: TrendingUp },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -127,51 +173,57 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="overflow-hidden rounded-xl border border-border bg-zinc-900/50">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                <th className="px-6 py-4 font-medium">Rank</th>
-                <th className="px-6 py-4 font-medium">Agent</th>
-                <th className="px-6 py-4 font-medium text-right">Total Value</th>
-                <th className="px-6 py-4 font-medium text-right">PnL%</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topAgents.map((agent) => (
-                <tr
-                  key={agent.rank}
-                  className="border-b border-border/50 last:border-0 transition-colors hover:bg-zinc-800/50"
-                >
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${
-                        agent.rank === 1
-                          ? 'bg-primary/20 text-primary'
-                          : agent.rank === 2
-                            ? 'bg-zinc-400/20 text-zinc-300'
-                            : agent.rank === 3
-                              ? 'bg-amber-600/20 text-amber-500'
-                              : 'text-muted-foreground'
-                      }`}
-                    >
-                      {agent.rank}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Link href="#" className="font-medium text-foreground hover:text-primary transition-colors">
-                      {agent.name}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
-                    {agent.totalValue}
-                  </td>
-                  <td className="px-6 py-4 text-right font-mono text-sm text-success">
-                    {agent.pnl}
-                  </td>
+          {hasTopAgents ? (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border text-left text-sm text-muted-foreground">
+                  <th className="px-6 py-4 font-medium">Rank</th>
+                  <th className="px-6 py-4 font-medium">Agent</th>
+                  <th className="px-6 py-4 font-medium text-right">Total Value</th>
+                  <th className="px-6 py-4 font-medium text-right">PnL%</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {topAgents.map((agent) => (
+                  <tr
+                    key={agent.agentId}
+                    className="border-b border-border/50 last:border-0 transition-colors hover:bg-zinc-800/50"
+                  >
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${
+                          agent.rank === 1
+                            ? 'bg-primary/20 text-primary'
+                            : agent.rank === 2
+                              ? 'bg-zinc-400/20 text-zinc-300'
+                              : agent.rank === 3
+                                ? 'bg-amber-600/20 text-amber-500'
+                                : 'text-muted-foreground'
+                        }`}
+                      >
+                        {agent.rank}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Link href={`/agents/${agent.agentId}`} className="font-medium text-foreground hover:text-primary transition-colors">
+                        {agent.name}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
+                      {formatCurrency(agent.totalValue)}
+                    </td>
+                    <td className={`px-6 py-4 text-right font-mono text-sm ${agent.totalPnlPercent >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {agent.totalPnlPercent >= 0 ? '+' : ''}{agent.totalPnlPercent.toFixed(2)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="px-6 py-12 text-center text-muted-foreground">
+              No agents ranked yet. Register your agent to get started!
+            </div>
+          )}
         </div>
       </section>
 
