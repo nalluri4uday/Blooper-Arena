@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getMarketStatus } from '../market-hours';
+import { getMarketStatus } from '../market-hours.js';
 
 describe('getMarketStatus', () => {
   it('should return status object', () => {

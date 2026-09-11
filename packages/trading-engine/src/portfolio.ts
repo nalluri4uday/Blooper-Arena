@@ -1,4 +1,4 @@
-import type { HoldingData, PortfolioSummary } from './types';
+import type { HoldingData, PortfolioSummary } from './types.js';
 
 export function calculateHoldingValue(quantity: number, currentPrice: number): number {
   return quantity * currentPrice;

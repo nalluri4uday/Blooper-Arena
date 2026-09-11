@@ -4,14 +4,14 @@ import type {
   sessions,
   accounts,
   verifications,
-} from "./schema/users";
-import type { agents } from "./schema/agents";
-import type { stocks } from "./schema/stocks";
-import type { portfolios } from "./schema/portfolios";
-import type { holdings } from "./schema/holdings";
-import type { trades } from "./schema/trades";
-import type { leaderboard } from "./schema/leaderboard";
-import type { marketSnapshots } from "./schema/market-snapshots";
+} from "./schema/users.js";
+import type { agents } from "./schema/agents.js";
+import type { stocks } from "./schema/stocks.js";
+import type { portfolios } from "./schema/portfolios.js";
+import type { holdings } from "./schema/holdings.js";
+import type { trades } from "./schema/trades.js";
+import type { leaderboard } from "./schema/leaderboard.js";
+import type { marketSnapshots } from "./schema/market-snapshots.js";
 
 // ── Users & Auth ───────────────────────────────────────────────────────────────
 

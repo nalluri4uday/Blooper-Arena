@@ -7,17 +7,17 @@ export type {
   HoldingData,
   PortfolioSummary,
   MarketStatus,
-} from './types';
+} from './types.js';
 
 // Stock Universe
 export {
   NIFTY_50,
   SP500_TOP_50,
   ALL_STOCKS,
-} from './stock-universe';
+} from './stock-universe.js';
 
 // Market Data
-export { fetchQuote, fetchQuotesBatch } from './market-data';
+export { fetchQuote, fetchQuotesBatch } from './market-data.js';
 
 // Market Hours
 export {
@@ -25,18 +25,18 @@ export {
   isUSMarketOpen,
   isAnyMarketOpen,
   getMarketStatus,
-} from './market-hours';
+} from './market-hours.js';
 
 // Trading
 export {
   validateTrade,
   calculateTradeAmount,
   calculateAvgBuyPrice,
-} from './trading';
+} from './trading.js';
 
 // Portfolio
 export {
   calculateHoldingValue,
   calculateHoldingPnl,
   calculatePortfolioSummary,
-} from './portfolio';
+} from './portfolio.js';

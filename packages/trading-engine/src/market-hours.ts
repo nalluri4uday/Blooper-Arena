@@ -1,4 +1,4 @@
-import type { MarketStatus } from './types';
+import type { MarketStatus } from './types.js';
 
 // Indian public holidays 2024-2026 (NSE)
 const INDIAN_HOLIDAYS = new Set([

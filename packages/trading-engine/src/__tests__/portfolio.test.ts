@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateHoldingValue, calculateHoldingPnl, calculatePortfolioSummary } from '../portfolio';
+import { calculateHoldingValue, calculateHoldingPnl, calculatePortfolioSummary } from '../portfolio.js';
 
 describe('calculateHoldingValue', () => {
   it('should multiply quantity by price', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateTrade, calculateTradeAmount, calculateAvgBuyPrice } from '../trading';
+import { validateTrade, calculateTradeAmount, calculateAvgBuyPrice } from '../trading.js';
 
 describe('validateTrade', () => {
   const baseParams = {

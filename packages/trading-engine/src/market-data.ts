@@ -1,4 +1,4 @@
-import type { QuoteData } from './types';
+import type { QuoteData } from './types.js';
 
 // Cache crumb + cookies for Yahoo Finance API
 let cachedAuth: { crumb: string; cookie: string; expiresAt: number } | null = null;

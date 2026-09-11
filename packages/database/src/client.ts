@@ -1,7 +1,7 @@
 import { drizzle as drizzleNeonHttp } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { drizzle as drizzleNode } from "drizzle-orm/node-postgres";
-import * as schema from "./schema/index";
+import * as schema from "./schema/index.js";
 
 /**
  * Create a serverless Neon database connection with Drizzle ORM.

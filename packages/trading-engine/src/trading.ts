@@ -1,4 +1,4 @@
-import type { TradeParams, TradeValidation } from './types';
+import type { TradeParams, TradeValidation } from './types.js';
 
 const MAX_SINGLE_STOCK_ALLOCATION = 0.5; // 50% of portfolio
 const SLIPPAGE_RATE = 0.001; // 0.1%

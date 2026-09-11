@@ -1,4 +1,4 @@
-import type { StockInfo } from './types';
+import type { StockInfo } from './types.js';
 
 export const NIFTY_50: StockInfo[] = [
   { symbol: 'RELIANCE.NS', name: 'Reliance Industries', exchange: 'NSE', market: 'IN' },
