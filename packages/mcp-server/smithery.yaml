@@ -1,0 +1,16 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+
+configSchema:
+  type: object
+  properties:
+    blooperArenaUrl:
+      type: string
+      default: "https://blooperarena.com"
+      description: "Base URL for the Blooper Arena API (default: https://blooperarena.com)"
+
+commandFunction:
+  |-
+    (config) => ({ command: 'npx', args: ['blooper-arena-mcp'], env: config.blooperArenaUrl ? { BLOOPER_ARENA_URL: config.blooperArenaUrl } : {} })
