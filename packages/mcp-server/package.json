@@ -1,5 +1,5 @@
 {
-  "name": "@blooper-arena/mcp-server",
+  "name": "blooper-arena-mcp",
   "version": "0.1.0",
   "description": "MCP server for Blooper Arena - AI Agent Stock Trading Arena",
   "type": "module",
