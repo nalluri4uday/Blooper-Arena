@@ -1,6 +1,7 @@
 'use client';
 
-import { BarChart3, Loader2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { BarChart3, Loader2, Search } from 'lucide-react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { useQuery } from '@tanstack/react-query';
 
@@ -54,6 +55,18 @@ async function fetchMarketStatus(): Promise<MarketStatus> {
 }
 
 function StockTable({ stocks, market }: { stocks: Stock[]; market: string }) {
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return stocks;
+    const q = search.toLowerCase();
+    return stocks.filter(
+      (s) =>
+        s.symbol.toLowerCase().includes(q) ||
+        s.name.toLowerCase().includes(q),
+    );
+  }, [stocks, search]);
+
   if (stocks.length === 0) {
     return (
       <div className="px-6 py-12 text-center text-muted-foreground">
@@ -63,46 +76,73 @@ function StockTable({ stocks, market }: { stocks: Stock[]; market: string }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-border text-left text-sm text-muted-foreground">
-            <th className="px-6 py-4 font-medium">Symbol</th>
-            <th className="px-6 py-4 font-medium">Name</th>
-            <th className="px-6 py-4 font-medium text-right">Price</th>
-            <th className="px-6 py-4 font-medium text-right">Day Change %</th>
-            <th className="px-6 py-4 font-medium text-right">Volume</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stocks.map((stock) => (
-            <tr
-              key={stock.symbol}
-              className="border-b border-border/50 last:border-0 transition-colors hover:bg-zinc-800/50"
-            >
-              <td className="px-6 py-4 font-mono text-sm font-semibold text-foreground">
-                {stock.symbol}
-              </td>
-              <td className="px-6 py-4 text-sm text-muted-foreground">{stock.name}</td>
-              <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
-                {formatPrice(stock.price, market)}
-              </td>
-              <td
-                className={`px-6 py-4 text-right font-mono text-sm ${
-                  stock.dayChangePercent >= 0 ? 'text-success' : 'text-destructive'
-                }`}
-              >
-                {stock.dayChangePercent >= 0 ? '▲' : '▼'}{' '}
-                {stock.dayChangePercent >= 0 ? '+' : ''}
-                {stock.dayChangePercent.toFixed(2)}%
-              </td>
-              <td className="px-6 py-4 text-right font-mono text-sm text-muted-foreground">
-                {formatVolume(stock.volume)}
-              </td>
+    <div>
+      {/* Search bar */}
+      <div className="border-b border-border px-4 py-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by symbol or name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-border bg-zinc-950 py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+        <div className="mt-2 text-xs text-muted-foreground">
+          Showing {filtered.length} of {stocks.length} stocks
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border text-left text-sm text-muted-foreground">
+              <th className="px-6 py-4 font-medium">Symbol</th>
+              <th className="px-6 py-4 font-medium">Name</th>
+              <th className="px-6 py-4 font-medium text-right">Price</th>
+              <th className="px-6 py-4 font-medium text-right">Day Change %</th>
+              <th className="px-6 py-4 font-medium text-right">Volume</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filtered.map((stock) => (
+              <tr
+                key={stock.symbol}
+                className="border-b border-border/50 last:border-0 transition-colors hover:bg-zinc-800/50"
+              >
+                <td className="px-6 py-4 font-mono text-sm font-semibold text-foreground">
+                  {stock.symbol}
+                </td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">{stock.name}</td>
+                <td className="px-6 py-4 text-right font-mono text-sm text-foreground">
+                  {formatPrice(stock.price, market)}
+                </td>
+                <td
+                  className={`px-6 py-4 text-right font-mono text-sm ${
+                    stock.dayChangePercent >= 0 ? 'text-success' : 'text-destructive'
+                  }`}
+                >
+                  {stock.dayChangePercent >= 0 ? '▲' : '▼'}{' '}
+                  {stock.dayChangePercent >= 0 ? '+' : ''}
+                  {stock.dayChangePercent.toFixed(2)}%
+                </td>
+                <td className="px-6 py-4 text-right font-mono text-sm text-muted-foreground">
+                  {formatVolume(stock.volume)}
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-6 py-8 text-center text-sm text-muted-foreground">
+                  No stocks match &ldquo;{search}&rdquo;
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
